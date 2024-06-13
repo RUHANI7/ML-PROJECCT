@@ -1,8 +1,9 @@
-opencv-contrib-python
-numpy
-Hand-Tracking-Module
-Mediapipe
-pywin32
-cvzone
-aspose.slides 
-freeze
+System Requirements for Hand Gesture Recognition Project
+
+1. Python (>=3.6)
+2. OpenCV (>=4.5.3)
+3. MediaPipe (>=0.8.6)
+
+To install the required libraries, run:
+pip install opencv-python-headless==4.5.3.56
+pip install mediapipe==0.8.6
