@@ -1,7 +1,7 @@
 # Power Point Presentation controlled by hand gesture
 <div align="center"> 
-<img src="https://www.canva.com/design/DAGIColnswE/BgonuB-3Ez6UsUef-MfxXA/view?utm_content=DAGIColnswE&utm_campaign=designshare&utm_medium=link&utm_source=editor)" alt="![Thumbnail](https://github.com/RUHANI7/ML-PROJECT/assets/159068549/52a31de3-adbd-4799-844f-25104cdc4b32)
-" />
+<img src="![Thumbnail](https://github.com/RUHANI7/ML-PROJECT/assets/159068549/7091b3d5-cda0-45b8-bfd1-ccc4a465f6b0)
+" alt="" />
  </div> 
  <br/>
  In this project, we have built a system that lets you control your presentation using hand gestures instead of buttons. This system will: use computer vision to detect the user's hands and fingers in real time and use machine learning to recognize gestures, like pointing, drawing, etc using a neural network to translate the hand gestures into actions on your computer, such as moving to the next slide.
