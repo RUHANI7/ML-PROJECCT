@@ -1,5 +1,6 @@
 # This app will use your built-in webcam to control your slides presentation.
 # For a one-handed presentation, use Gesture 1 (thumbs up) to go to the previous slide and Gesture 2 (whole hand pointing up) to go to the next slide.
+#importing the libraries
 
 import win32com.client
 from cvzone.HandTrackingModule import HandDetector
@@ -9,6 +10,8 @@ import numpy as np
 
 # PowerPoint setup
 Application = win32com.client.Dispatch("PowerPoint.Application")
+
+#change the location as per requirement
 Presentation = Application.Presentations.Open(
     "C:/Users/KIIT/Downloads/PPT-Presentation-controlled-by-hand-gesture-main/PPT-Presentation-controlled-by-hand-gesture-main/zani.pptx")
 print(Presentation.Name)
