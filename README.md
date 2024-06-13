@@ -12,7 +12,7 @@
 
 This project requires 7 libraries to run, make sure python is installed on your machine. If you don't have python installed go to their official website or follow the link to download https://www.python.org/downloads/
  <br/> <br/>
-2- Here are the libraries we'll
+2- Here are the libraries we'll be using in this projecct
 
 ```
 pip install -r requirements.txt
