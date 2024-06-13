@@ -1,113 +1,83 @@
-# This app will use your built-in webcam to control your slides presentation.
-# For a one-handed presentation, use Gesture 1 (thumbs up) to go to the previous slide and Gesture 2 (whole hand pointing up) to go to the next slide.
-#importing the libraries
-
-import win32com.client
-from cvzone.HandTrackingModule import HandDetector
 import cv2
-import os
-import numpy as np
+import mediapipe as mp
 
-# PowerPoint setup
-Application = win32com.client.Dispatch("PowerPoint.Application")
+# Initialize MediaPipe Hand model
+mp_hands = mp.solutions.hands
+hands = mp_hands.Hands(max_num_hands=1, min_detection_confidence=0.7)
+mp_draw = mp.solutions.drawing_utils
 
-#change the location as per requirement
-Presentation = Application.Presentations.Open(
-    "C:/Users/KIIT/Downloads/PPT-Presentation-controlled-by-hand-gesture-main/PPT-Presentation-controlled-by-hand-gesture-main/zani.pptx")
-print(Presentation.Name)
-Presentation.SlideShowSettings.Run()
+# OpenCV setup to capture video from the default webcam
+cap = cv2.VideoCapture(0)  # Change the index if you have multiple cameras
 
-# Parameters
-width, height = 900, 720
-gestureThreshold = 300
+# Check if the webcam is opened correctly
+if not cap.isOpened():
+    print("Error: Could not open video capture")
+    exit()
 
-# Camera Setup
-cap = cv2.VideoCapture(0)
-cap.set(3, width)
-cap.set(4, height)
+# Function to detect gesture based on hand landmarks
+def detect_gesture(hand_landmarks):
+    # Get the coordinates of the fingertips
+    thumb_tip = hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_TIP]
+    index_tip = hand_landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_TIP]
+    middle_tip = hand_landmarks.landmark[mp_hands.HandLandmark.MIDDLE_FINGER_TIP]
+    ring_tip = hand_landmarks.landmark[mp_hands.HandLandmark.RING_FINGER_TIP]
+    pinky_tip = hand_landmarks.landmark[mp_hands.HandLandmark.PINKY_TIP]
 
-# Hand Detector
-detectorHand = HandDetector(detectionCon=0.8, maxHands=1)
+    # Example gestures: Thumbs up, Thumbs down, Victory, Fist, Open hand, Pointing, Rock, OK sign, Peace sign
+    if thumb_tip.y < index_tip.y < middle_tip.y < ring_tip.y < pinky_tip.y:
+        return "Thumbs Up"
+    elif thumb_tip.y > index_tip.y > middle_tip.y > ring_tip.y > pinky_tip.y:
+        return "Thumbs Down"
+    elif index_tip.y > middle_tip.y > ring_tip.y > pinky_tip.y:
+        return "Victory"
+    elif thumb_tip.y < index_tip.y and middle_tip.y < ring_tip.y and pinky_tip.y < ring_tip.y:
+        return "Fist"
+    elif thumb_tip.y > index_tip.y and middle_tip.y > ring_tip.y and pinky_tip.y > ring_tip.y:
+        return "Open Hand"
+    elif thumb_tip.x < index_tip.x < middle_tip.x < ring_tip.x < pinky_tip.x:
+        return "Pointing"
+    elif thumb_tip.y > index_tip.y > middle_tip.y > ring_tip.y > pinky_tip.y and thumb_tip.x > index_tip.x > middle_tip.x > ring_tip.x > pinky_tip.x:
+        return "Rock"
+    elif thumb_tip.x < index_tip.x < middle_tip.x < ring_tip.x < pinky_tip.x and thumb_tip.y < index_tip.y < middle_tip.y < ring_tip.y < pinky_tip.y:
+        return "OK Sign"
+    elif thumb_tip.x > index_tip.x > middle_tip.x > ring_tip.x > pinky_tip.x and thumb_tip.y < index_tip.y < middle_tip.y < ring_tip.y < pinky_tip.y:
+        return "Peace Sign"
+    return "Unknown Gesture"
 
-# Variables
-delay = 30
-buttonPressed = False
-counter = 0
-imgNumber = 20
-annotations = [[]]
-annotationNumber = -1
-annotationStart = False
+# Main loop to read video frames and process them
+while cap.isOpened():
+    success, frame = cap.read()  # Read a frame from the webcam
+    if not success:
+        print("Ignoring empty camera frame.")
+        continue
 
-while True:
-    # Get image frame
-    success, img = cap.read()
-    # Find the hand and its landmarks
-    hands, img = detectorHand.findHands(img)  # with draw
-    if hands and buttonPressed is False:  # If hand is detected
-        hand = hands[0]
-        cx, cy = hand["center"]
-        lmList = hand["lmList"]  # List of 21 Landmark points
-        fingers = detectorHand.fingersUp(hand)  # List of which fingers are up
+    # Flip the image horizontally for a later selfie-view display
+    frame = cv2.flip(frame, 1)
 
-        if cy <= gestureThreshold:  # If hand is at the height of the face
-            if fingers == [1, 1, 1, 1, 1]:
-                print("Next")
-                buttonPressed = True
-                Presentation.SlideShowWindow.View.Next()
-                annotations = [[]]
-                annotationNumber = -1
-                annotationStart = False
+    # Convert the BGR image to RGB
+    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-            elif fingers == [1, 0, 0, 0, 0]:
-                print("Previous")
-                buttonPressed = True
-                Presentation.SlideShowWindow.View.Previous()
-                annotations = [[]]
-                annotationNumber = -1
-                annotationStart = False
+    # Process the image and detect hands
+    result = hands.process(frame_rgb)
 
-            elif fingers == [0, 1, 0, 0, 0]:
-                print("Zoom In")
-                # Add zoom in action (e.g., increase slide size, zoom effect, etc.)
-                buttonPressed = True
+    # Draw hand landmarks if any hands are detected
+    if result.multi_hand_landmarks:
+        for hand_landmarks in result.multi_hand_landmarks:
+            # Draw the hand landmarks on the frame
+            mp_draw.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
 
-            elif fingers == [0, 1, 1, 0, 0]:
-                print("Zoom Out")
-                # Add zoom out action (e.g., decrease slide size, zoom effect, etc.)
-                buttonPressed = True
+            # Detect gesture based on hand landmarks
+            gesture = detect_gesture(hand_landmarks)
+            # Display the detected gesture on the frame
+            cv2.putText(frame, gesture, (10, 70), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
 
-            elif fingers == [0, 1, 1, 1, 0]:
-                print("Draw Mode")
-                # Add draw mode action
-                annotationStart = not annotationStart
-                if annotationStart:
-                    annotationNumber += 1
-                    annotations.append([])
-                buttonPressed = True
+    # Display the frame with landmarks and gesture text
+    cv2.imshow('Hand Gesture Recognition', frame)
 
-        # Drawing annotations
-        if annotationStart:
-            if fingers == [0, 1, 1, 1, 0]:
-                x, y = lmList[8][0], lmList[8][1]
-                annotations[annotationNumber].append((x, y))
-
-    if buttonPressed:
-        counter += 1
-        if counter > delay:
-            counter = 0
-            buttonPressed = False
-
-    for i, annotation in enumerate(annotations):
-        for j in range(len(annotation)):
-            if j != 0:
-                cv2.line(img, annotation[j - 1],
-                         annotation[j], (0, 0, 200), 12)
-
-    cv2.imshow("Image", img)
-
-    key = cv2.waitKey(1)
-    if key == ord('q'):
+    # Break the loop on 'q' key press
+    if cv2.waitKey(10) & 0xFF == ord('q'):
         break
 
+# Release the webcam and close all OpenCV windows
 cap.release()
 cv2.destroyAllWindows()
